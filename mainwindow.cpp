@@ -12,6 +12,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    delete m_settings;
+    m_settings = nullptr;
     delete ui;
 }
 
@@ -20,28 +22,49 @@ MainWindow::~MainWindow()
 // 初始化
 void MainWindow::init()
 {
-    m_triggerInterval = 1000;
-    m_byteVirtualKey = 0x00;
-
-    initConnect();
     initUi();
+    initClassVariables();
+    initByConfig();
+    initConnect();
 
     // 安装本机事件监听
     qApp->installNativeEventFilter(&m_lobalHotkey);
 
-    // 注册启动按键触发快捷键
+    // 注册启动按键触发快捷键（F6）
     registerStartHotKey(0x75);
-    // 注册停止按键触发快捷键
+    // 注册停止按键触发快捷键（F7）
     registerStopHotKey(0x76);
+}
 
-    // 停止按钮禁用
-    ui->Btn_stopExec->setDisabled(true);
+// 初始化成员变量
+void MainWindow::initClassVariables()
+{
+    m_triggerInterval = 1000;
+    m_byteVirtualKey = 0x00;
+
+    QString settingSavePath = QCoreApplication::applicationDirPath() + "/config.ini";
+    m_settings = new QSettings(settingSavePath, QSettings::IniFormat);
+}
+
+// 根据配置文件进行初始化
+void MainWindow::initByConfig()
+{
+    //初始化虚拟键值
+    QVariant byteVirtualKey = m_settings->value("triggeredKey", 0x00);
+    m_byteVirtualKey = static_cast<quint8>(byteVirtualKey.toUInt());
+
+    //初始化按键触发间隔
+    int triggerInterval = m_settings->value("triggerInterval", 1000).toInt();
+    ui->spinBox_triggerInterval->setValue(triggerInterval);
 }
 
 // 初始化Ui
 void MainWindow::initUi()
 {
     this->setWindowTitle("键盘触发器");
+
+    // 停止按钮禁用
+    ui->Btn_stopExec->setDisabled(true);
 }
 
 // 初始化信号与槽
@@ -82,6 +105,9 @@ void MainWindow::registerStopHotKey(int key)
 void MainWindow::setVirtualKeyCode(quint8 keyCode)
 {
     m_byteVirtualKey = keyCode;
+
+    //将触发的按键写入配置文件
+    m_settings->setValue("triggeredKey", keyCode);
 }
 
 // 按键触发
@@ -114,6 +140,9 @@ void MainWindow::on_Btn_startExec_clicked()
         QMessageBox::warning(this, "警告", "请先选择触发的按键!");
         return;
     }
+
+    //将触发的时间间隔写入配置文件
+    m_settings->setValue("triggerInterval", ui->spinBox_triggerInterval->value());
 
     ui->Btn_startExec->setDisabled(true);
     ui->Btn_stopExec->setEnabled(true);

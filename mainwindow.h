@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <QMessageBox>
+#include <QSettings>
 
 #include "KeyPressEater.h"
 #include "GlobalHotkey.h"
@@ -24,6 +25,8 @@ public:
 
 private:
     void init();
+    void initClassVariables();                  //初始化成员变量
+    void initByConfig();                        //根据配置文件进行初始化
     void initUi();
     void initConnect();
     void registerStartHotKey(int key);          //注册启动按键触发快捷键
@@ -48,5 +51,7 @@ private:
 
     KeyPressEater m_keyPressEater;             //识别按下键的窗口
     GlobalHotkey m_lobalHotkey;                //设置热键
+
+    QSettings *m_settings;                     //用于保存设置
 };
 #endif // MAINWINDOW_H
