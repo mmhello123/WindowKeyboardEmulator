@@ -17,6 +17,13 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+// 重写关闭事件
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    this->hide();
+    event->ignore();
+}
+
 /*----------------------------------------------------------------------------*/
 
 // 初始化
@@ -34,6 +41,9 @@ void MainWindow::init()
     registerStartHotKey(0x75);
     // 注册停止按键触发快捷键（F7）
     registerStopHotKey(0x76);
+
+    //创建桌面托盘
+    createSystemTray();
 }
 
 // 初始化成员变量
@@ -97,6 +107,23 @@ void MainWindow::registerStopHotKey(int key)
     });
 
     if(ret == false) QMessageBox::critical(this, "错误", "注册全局停止热键失败!");
+}
+
+// 创建系统托盘
+void MainWindow::createSystemTray()
+{
+    //创建菜单
+    m_menu = new QMenu(this);
+    //在菜单中增加 打开主界面
+    QAction *openMainwindow = m_menu->addAction(QIcon("://res/systemTrayIcon.png"), "打开主界面");
+    connect(openMainwindow, &QAction::triggered, this, [=](){this->show();});
+    //在菜单中增加 退出功能
+    QAction *quitAction = m_menu->addAction(QIcon("://res/quit.png"), "退出");
+    connect(quitAction, &QAction::triggered, this, [=](){this->close();});
+
+    m_systemTray.setContextMenu(m_menu);
+    m_systemTray.setIcon(QIcon("://res/systemTrayIcon.png"));
+    m_systemTray.show();
 }
 
 /*----------------------------------------------------------------------------*/

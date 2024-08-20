@@ -5,6 +5,8 @@
 #include <QTimer>
 #include <QMessageBox>
 #include <QSettings>
+#include <QSystemTrayIcon>
+#include <QCloseEvent>
 
 #include "KeyPressEater.h"
 #include "GlobalHotkey.h"
@@ -23,14 +25,20 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+protected:
+    void closeEvent(QCloseEvent* event) override;
+
 private:
     void init();
     void initClassVariables();                  //初始化成员变量
     void initByConfig();                        //根据配置文件进行初始化
     void initUi();
     void initConnect();
+
     void registerStartHotKey(int key);          //注册启动按键触发快捷键
     void registerStopHotKey(int key);           //注册停止按键触发快捷键
+
+    void createSystemTray();                    //创建系统托盘
 
 private slots:
     void setVirtualKeyCode(quint8 keyCode);
@@ -53,5 +61,8 @@ private:
     GlobalHotkey m_lobalHotkey;                //设置热键
 
     QSettings *m_settings;                     //用于保存设置
+
+    QSystemTrayIcon m_systemTray;              //系统托盘
+    QMenu*          m_menu;                    //系统托盘所需的菜单
 };
 #endif // MAINWINDOW_H
