@@ -12,8 +12,17 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    delete m_settings;
-    m_settings = nullptr;
+    if(m_settings)
+    {
+        delete m_settings;
+        m_settings = nullptr;
+    }
+
+    if(m_menu)
+    {
+        delete m_menu;
+        m_menu = nullptr;
+    }
     delete ui;
 }
 
@@ -119,7 +128,11 @@ void MainWindow::createSystemTray()
     connect(openMainwindow, &QAction::triggered, this, [=](){this->show();});
     //在菜单中增加 退出功能
     QAction *quitAction = m_menu->addAction(QIcon("://res/quit.png"), "退出");
-    connect(quitAction, &QAction::triggered, this, [=](){this->close();});
+    connect(quitAction, &QAction::triggered, this, [=]()
+            {
+        qDebug() << "退出---------------------";
+        QCoreApplication::exit(0);                  // 以0作为退出码退出程序
+    });
 
     m_systemTray.setContextMenu(m_menu);
     m_systemTray.setIcon(QIcon("://res/systemTrayIcon.png"));
