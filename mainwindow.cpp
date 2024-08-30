@@ -121,7 +121,7 @@ void MainWindow::registerStartHotKey(int key)
         on_Btn_startExec_clicked();
     });
 
-    if(ret == false) QMessageBox::critical(this, "错误", "注册全局启动热键失败!");
+    if(ret == false) QMessageBox::critical(this, "错误", "注册全局启动触发热键失败：F5已被注册!");
 }
 
 // 注册停止按键触发快捷键
@@ -132,7 +132,7 @@ void MainWindow::registerStopHotKey(int key)
         on_Btn_stopExec_clicked();
     });
 
-    if(ret == false) QMessageBox::critical(this, "错误", "注册全局停止热键失败!");
+    if(ret == false) QMessageBox::critical(this, "错误", "注册全局停止触发热键失败：F6已被注册!");
 }
 
 // 创建系统托盘
