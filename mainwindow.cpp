@@ -23,14 +23,26 @@ MainWindow::~MainWindow()
         delete m_menu;
         m_menu = nullptr;
     }
+
+    if(m_closeDialog)
+    {
+        delete m_closeDialog;
+        m_closeDialog = nullptr;
+    }
     delete ui;
 }
 
 // 重写关闭事件
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    this->hide();
+    //将触发的按键写入配置文件
+    bool isShowAgain = m_settings->value("isShowAgain", true).toBool();
+    if(!isShowAgain) return;
+
+    //忽略关闭事件
     event->ignore();
+    //关闭时显示关闭对话框
+    m_closeDialog->show();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -63,6 +75,8 @@ void MainWindow::initClassVariables()
 
     QString settingSavePath = QCoreApplication::applicationDirPath() + "/config.ini";
     m_settings = new QSettings(settingSavePath, QSettings::IniFormat);
+
+    m_closeDialog = new CloseDialog(this);
 }
 
 // 根据配置文件进行初始化
@@ -71,6 +85,8 @@ void MainWindow::initByConfig()
     //初始化虚拟键值
     QVariant byteVirtualKey = m_settings->value("triggeredKey", 0x00);
     m_byteVirtualKey = static_cast<quint8>(byteVirtualKey.toUInt());
+    //在ui上显示
+    setVirtualKeyCode(m_byteVirtualKey);
 
     //初始化按键触发间隔
     int triggerInterval = m_settings->value("triggerInterval", 1000).toInt();
@@ -92,6 +108,7 @@ void MainWindow::initConnect()
     connect(&m_triggerTimer, &QTimer::timeout, this, &MainWindow::triggerKeyboardKeys);
     connect(&m_keyPressEater, &KeyPressEater::sendVirtualKeyCode, this, &MainWindow::setVirtualKeyCode);
     connect(ui->action_help, &QAction::triggered, this, &MainWindow::showHelpDialog);
+    connect(m_closeDialog, &CloseDialog::exitOptions, this, &MainWindow::handleExitOptions);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -129,13 +146,13 @@ void MainWindow::createSystemTray()
     //在菜单中增加 退出功能
     QAction *quitAction = m_menu->addAction(QIcon("://res/quit.png"), "退出");
     connect(quitAction, &QAction::triggered, this, [=]()
-            {
-        qDebug() << "退出---------------------";
+    {
         QCoreApplication::exit(0);                  // 以0作为退出码退出程序
     });
 
     m_systemTray.setContextMenu(m_menu);
     m_systemTray.setIcon(QIcon("://res/systemTrayIcon.png"));
+    m_systemTray.setToolTip("按键触发器");
     m_systemTray.show();
 }
 
@@ -145,6 +162,15 @@ void MainWindow::createSystemTray()
 void MainWindow::setVirtualKeyCode(quint8 keyCode)
 {
     m_byteVirtualKey = keyCode;
+
+    // 在ui上显示被触发的按键
+    if(keyCode == 0x00) ui->label_pressKey->setText("无");
+    else
+    {
+        QString keyText = QKeySequence(keyCode).toString();
+        QString labelString = QString(" %1 ").arg(keyText);
+        ui->label_pressKey->setText(labelString);
+    }
 
     //将触发的按键写入配置文件
     m_settings->setValue("triggeredKey", keyCode);
@@ -168,6 +194,20 @@ void MainWindow::showHelpDialog()
     helpBox.setText("1.先点击“捕获按键”来设置要触发的按键\n2.点击“开始执行”或按快捷键F6来自动触发按键\n3.点击“停止执行”或按快捷键F7来停止触发按键");
     helpBox.setStandardButtons(QMessageBox::Ok);
     helpBox.exec();
+}
+
+// 处理退出选项
+void MainWindow::handleExitOptions(bool isExit, bool isShowAagin)
+{
+    //将是否再次显示写入配置文件
+    m_settings->setValue("isShowAgain", isShowAagin);
+
+    if(isExit) QCoreApplication::exit(0);
+    else
+    {
+        m_closeDialog->hide();
+        this->hide();
+    }
 }
 
 /*----------------------------------------------------------------------------*/
